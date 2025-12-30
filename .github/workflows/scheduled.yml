@@ -1,0 +1,40 @@
+# ============================================================================
+# GitHub Actions - Scheduled Tests
+# ============================================================================
+# Runs tests periodically to catch issues with dependencies
+# ============================================================================
+
+name: Scheduled Tests
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  scheduled-test:
+    name: Weekly Test
+    runs-on: ubuntu-latest
+    if: false  # TODO: Enable when ready
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DUNIFY_LINK_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run Tests
+        working-directory: build
+        run: ctest --output-on-failure --parallel
+
+      - name: Notify on Failure
+        if: failure()
+        run: echo "Weekly tests failed! Please check the logs."

@@ -34,11 +34,6 @@ jobs:
             compiler: msvc
             cmake_generator: "Visual Studio 17 2022"
 
-          # Windows MinGW
-          - os: windows-latest
-            compiler: mingw
-            cmake_generator: "MinGW Makefiles"
-
           # Ubuntu GCC
           - os: ubuntu-latest
             compiler: gcc
@@ -68,12 +63,6 @@ jobs:
         if: matrix.compiler == 'msvc'
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Setup MinGW (Windows)
-        if: matrix.compiler == 'mingw'
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: x64
-
       - name: Setup CMake
         uses: lukka/get-cmake@latest
 
@@ -81,6 +70,7 @@ jobs:
         env:
           CC: ${{ matrix.cc }}
           CXX: ${{ matrix.cxx }}
+        shell: bash
         run: |
           cmake -S . -B build \
             -G "${{ matrix.cmake_generator }}" \
@@ -89,9 +79,11 @@ jobs:
             -DUNIFY_LINK_BUILD_EXAMPLES=ON
 
       - name: Build
+        shell: bash
         run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
 
       - name: Run Tests
+        shell: bash
         working-directory: build
         run: ctest -C ${{ env.BUILD_TYPE }} --output-on-failure --parallel
 
@@ -164,26 +156,25 @@ jobs:
   # ==========================================================================
   # Documentation Generation
   # ==========================================================================
-  docs:
-    name: Generate Documentation
-    runs-on: ubuntu-latest
-    if: true # TODO: Enable when ready
+  # docs:
+  #   name: Generate Documentation
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Install Doxygen
-        run: sudo apt-get install -y doxygen graphviz
+  #     - name: Install Doxygen
+  #       run: sudo apt-get install -y doxygen graphviz
 
-      - name: Generate Documentation
-        run: doxygen Doxyfile
+  #     - name: Generate Documentation
+  #       run: doxygen Doxyfile
 
-      - name: Upload Documentation
-        uses: actions/upload-artifact@v4
-        with:
-          name: documentation
-          path: docs/html
+  #     - name: Upload Documentation
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: documentation
+  #         path: docs/html
 
   # ==========================================================================
   # Python Wheel Build

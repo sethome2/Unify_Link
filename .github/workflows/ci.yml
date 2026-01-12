@@ -258,12 +258,3 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
           generate_release_notes: true
-
-      - name: Publish to PyPI (optional)
-        if: false # Set to true when ready to publish
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: |
-          pip install twine
-          twine upload dist/*

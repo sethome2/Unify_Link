@@ -78,6 +78,11 @@ if(UNIFY_LINK_BUILD_PYTHON)
         python/unify_link_wrap_py.cpp
     )
 
+    # Rename output to unify_link.xxx (e.g., unify_link.so or unify_link.pyd)
+    set_target_properties(unify_link_py PROPERTIES
+        OUTPUT_NAME "unify_link"
+    )
+
     target_link_libraries(unify_link_py PRIVATE ${PROJECT_NAME})
 
     # Building via scikit-build-core for pip
@@ -87,6 +92,13 @@ if(UNIFY_LINK_BUILD_PYTHON)
     set_target_properties(unify_link_py PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/python
+    )
+
+    # Copy output files to 'example/python'
+    add_custom_command(TARGET unify_link_py POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        $<TARGET_FILE:unify_link_py>
+        ${CMAKE_CURRENT_SOURCE_DIR}/example/python
     )
 endif()
 

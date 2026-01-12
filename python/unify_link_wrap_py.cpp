@@ -120,10 +120,10 @@ PYBIND11_MODULE(unify_link, m)
              "Pop all buffered outbound bytes as a Python bytes object (empties the buffer)")
         .def_property_readonly("send_buff_used", &Unify_link_base::send_buff_used)
         .def_property_readonly("send_buff_remain", &Unify_link_base::send_buff_remain)
-        .def_readwrite("last_seq_id", &Unify_link_base::last_seq_id)
-        .def_readwrite("com_error_count", &Unify_link_base::com_error_count)
-        .def_readwrite("decode_error_count", &Unify_link_base::decode_error_count)
-        .def_readwrite("success_count", &Unify_link_base::success_count);
+        .def_readonly("last_seq_id", &Unify_link_base::last_seq_id)
+        .def_readonly("com_error_count", &Unify_link_base::com_error_count)
+        .def_readonly("decode_error_count", &Unify_link_base::decode_error_count)
+        .def_readonly("success_count", &Unify_link_base::success_count);
 
     // Encoder bindings
     py::enum_<Encoder_link_t::ErrorCode>(m, "EncoderErrorCode")
@@ -181,7 +181,7 @@ PYBIND11_MODULE(unify_link, m)
         .def_readonly_static("component_id", &Encoder_link_t::component_id)
         .def_readonly_static("MAX_ENCODERS", &Encoder_link_t::MAX_ENCODERS);
 
-    // Motor bindings
+    // Motor_link_t bindings
     py::enum_<Motor_link_t::ErrorCode>(m, "MotorErrorCode")
         .value("OK", Motor_link_t::ErrorCode::OK)
         .value("OVER_HEAT_ERR", Motor_link_t::ErrorCode::OVER_HEAT_ERR)
@@ -232,11 +232,8 @@ PYBIND11_MODULE(unify_link, m)
 
     py::class_<Motor_link_t::motor_set_t>(m, "MotorSet")
         .def(py::init<>())
-        .def_property(
-            "motor_set", [](const Motor_link_t::motor_set_t &self)
-            { return std::vector<int16_t>(std::begin(self.motor_set), std::end(self.motor_set)); },
-            [](Motor_link_t::motor_set_t &self, const std::vector<int16_t> &values)
-            { assign_array(self.motor_set, values, "motor_set"); });
+        .def_readwrite("motor_set", &Motor_link_t::motor_set_t::motor_set)
+        .def_readwrite("motor_set_extra", &Motor_link_t::motor_set_t::motor_set_extra);
 
     py::class_<Motor_link_t>(m, "MotorLink")
         .def(py::init<Unify_link_base &>(), py::arg("link_base"), py::keep_alive<1, 2>())
@@ -252,12 +249,13 @@ PYBIND11_MODULE(unify_link, m)
             "motor_settings", [](Motor_link_t &self) { return self.motor_settings; },
             [](Motor_link_t &self, const Motor_link_t::motor_settings_t &value) { self.motor_settings = value; })
         .def_property(
-            "motor_set", [](Motor_link_t &self) { return self.motor_set; },
-            [](Motor_link_t &self, const Motor_link_t::motor_set_t &value) { self.motor_set = value; })
+            "motor_set", [](Motor_link_t &self) { return copy_array(self.motor_set); },
+            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_set_t> &values)
+            { assign_array(self.motor_set, values, "motor_set"); })
         .def("send_motor_basic_data", py::overload_cast<>(&Motor_link_t::send_motor_basic_data))
         .def("send_motor_info_data", py::overload_cast<>(&Motor_link_t::send_motor_info_data))
         .def("send_motor_setting_data", py::overload_cast<>(&Motor_link_t::send_motor_setting_data))
-        .def("send_motor_set_current_data", py::overload_cast<>(&Motor_link_t::send_motor_set_current_data))
+        .def("send_motor_set_data", py::overload_cast<>(&Motor_link_t::send_motor_set_data))
         .def_readonly_static("component_id", &Motor_link_t::component_id)
         .def_readonly_static("MAX_MOTORS", &Motor_link_t::MAX_MOTORS);
 

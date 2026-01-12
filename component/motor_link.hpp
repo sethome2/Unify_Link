@@ -67,7 +67,8 @@ namespace unify_link
         constexpr static uint8_t MOTOR_SET_CURRENT_ID = 4;
         typedef struct
         {
-            int16_t motor_set[8];
+            int16_t motor_set;
+            int16_t motor_set_extra;
         } motor_set_t;
 #pragma pack(pop)
 
@@ -76,7 +77,7 @@ namespace unify_link
         motor_basic_t motor_basic[MAX_MOTORS];
         motor_info_t motor_info[MAX_MOTORS];
         motor_settings_t motor_settings;
-        motor_set_t motor_set;
+        motor_set_t motor_set[MAX_MOTORS];
 
     public:
         Unify_link_base &link_base;
@@ -135,10 +136,18 @@ namespace unify_link
             link_base.send_packet<component_id>(MOTOR_SETTING_ID, send_data);
         }
 
-        void send_motor_set_current_data() { send_motor_set_current_data(motor_set); }
-        void send_motor_set_current_data(const motor_set_t &send_data)
+        void send_motor_set_data() { send_motor_set_data(motor_set); }
+        void send_motor_set_data(const motor_set_t (&send_data)[MAX_MOTORS])
         {
             link_base.send_packet<component_id>(MOTOR_SET_CURRENT_ID, send_data);
+        }
+        void set_motor_current(uint8_t motor_id, int16_t current)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return;
+
+            motor_set[motor_id].motor_set = current;
+            motor_set[motor_id].motor_set_extra = 0;
         }
     };
 } // namespace unify_link

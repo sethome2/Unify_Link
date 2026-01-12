@@ -98,19 +98,20 @@ TEST_F(MotorLinkTest, MotorSettingRoundTrip)
 
 TEST_F(MotorLinkTest, MotorSetCurrentRoundTrip)
 {
-    Motor_link_t::motor_set_t sent;
-    for (int i = 0; i < 8; ++i)
+    Motor_link_t::motor_set_t sent[Motor_link_t::MAX_MOTORS];
+    for (int i = 0; i < Motor_link_t::MAX_MOTORS; ++i)
     {
-        sent.motor_set[i] = static_cast<int16_t>(1000 + i * 100);
+        sent[i].motor_set = static_cast<int16_t>(1000 + i * 100);
+        sent[i].motor_set_extra = 0;
     }
 
-    motor_link->send_motor_set_current_data(sent);
+    motor_link->send_motor_set_data(sent);
     roundTrip();
 
     EXPECT_EQ(link_base.success_count, 1u);
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < Motor_link_t::MAX_MOTORS; ++i)
     {
-        EXPECT_EQ(motor_link->motor_set.motor_set[i], sent.motor_set[i]);
+        EXPECT_EQ(motor_link->motor_set[i].motor_set, sent[i].motor_set);
     }
 }
 

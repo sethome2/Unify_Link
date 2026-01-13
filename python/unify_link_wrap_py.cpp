@@ -175,9 +175,6 @@ PYBIND11_MODULE(unify_link, m)
         .def_property(
             "encoder_setting", [](Encoder_link_t &self) { return self.encoder_setting; },
             [](Encoder_link_t &self, const Encoder_link_t::encoder_setting_t &value) { self.encoder_setting = value; })
-        .def("send_encoder_basic_data", py::overload_cast<>(&Encoder_link_t::send_encoder_basic_data))
-        .def("send_encoder_info_data", py::overload_cast<>(&Encoder_link_t::send_encoder_info_data))
-        .def("send_encoder_setting_data", py::overload_cast<>(&Encoder_link_t::send_encoder_setting_data))
         .def_readonly_static("component_id", &Encoder_link_t::component_id)
         .def_readonly_static("MAX_ENCODERS", &Encoder_link_t::MAX_ENCODERS);
 
@@ -233,7 +230,8 @@ PYBIND11_MODULE(unify_link, m)
     py::class_<Motor_link_t::motor_set_t>(m, "MotorSet")
         .def(py::init<>())
         .def_readwrite("motor_set", &Motor_link_t::motor_set_t::motor_set)
-        .def_readwrite("motor_set_extra", &Motor_link_t::motor_set_t::motor_set_extra);
+        .def_readwrite("motor_set_extra", &Motor_link_t::motor_set_t::motor_set_extra)
+        .def_readwrite("motor_set_extra2", &Motor_link_t::motor_set_t::motor_set_extra2);
 
     py::class_<Motor_link_t>(m, "MotorLink")
         .def(py::init<Unify_link_base &>(), py::arg("link_base"), py::keep_alive<1, 2>())
@@ -246,16 +244,15 @@ PYBIND11_MODULE(unify_link, m)
             [](Motor_link_t &self, const std::vector<Motor_link_t::motor_info_t> &values)
             { assign_array(self.motor_info, values, "motor_info"); })
         .def_property(
-            "motor_settings", [](Motor_link_t &self) { return self.motor_settings; },
-            [](Motor_link_t &self, const Motor_link_t::motor_settings_t &value) { self.motor_settings = value; })
+            "motor_settings", [](Motor_link_t &self) { return copy_array(self.motor_settings); },
+            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_settings_t> &values)
+            { assign_array(self.motor_settings, values, "motor_settings"); })
         .def_property(
             "motor_set", [](Motor_link_t &self) { return copy_array(self.motor_set); },
             [](Motor_link_t &self, const std::vector<Motor_link_t::motor_set_t> &values)
             { assign_array(self.motor_set, values, "motor_set"); })
-        .def("send_motor_basic_data", py::overload_cast<>(&Motor_link_t::send_motor_basic_data))
-        .def("send_motor_info_data", py::overload_cast<>(&Motor_link_t::send_motor_info_data))
-        .def("send_motor_setting_data", py::overload_cast<>(&Motor_link_t::send_motor_setting_data))
-        .def("send_motor_set_data", py::overload_cast<>(&Motor_link_t::send_motor_set_data))
+        .def_readwrite("on_motor_info_updated", &Motor_link_t::on_motor_info_updated)
+        .def_readwrite("on_motor_settings_updated", &Motor_link_t::on_motor_settings_updated)
         .def_readonly_static("component_id", &Motor_link_t::component_id)
         .def_readonly_static("MAX_MOTORS", &Motor_link_t::MAX_MOTORS);
 

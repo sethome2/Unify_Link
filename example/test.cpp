@@ -31,20 +31,21 @@ uint32_t buff_len = 0;
 
 int main()
 {
-    uint8_t data[10] = {0xA0, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A};
+    motor_link.on_motor_info_updated = [](const unify_link::Motor_link_t::motor_info_t &info)
+    {
+        std::cout << "Motor info updated. motor_id=" << static_cast<int>(info.motor_id) << " model=" << info.model
+                  << std::endl;
+    };
 
     for (int i = 0; i < 10; ++i)
     {
         motor_info_arr[0] = motor_info;
-        motor_link.send_motor_info_data(motor_info_arr);
+        unify_link_base.build_send_data(unify_link::Motor_link_t::component_id,
+                                        unify_link::Motor_link_t::MOTOR_INFO_ID,
+                                        reinterpret_cast<const uint8_t *>(&motor_info_arr[0]),
+                                        sizeof(motor_info_arr[0]));
         unify_link_base.send_buff_pop(buff, &buff_len);
-
         unify_link_base.rev_data_push(buff, buff_len);
-        unify_link_base.rev_data_push(data, 10);
-
-        std::cout << "buff_len: " << buff_len << std::endl;
-        std::cout << "rev_buff_len: " << unify_link_base.rec_buff.used() << std::endl;
-
         unify_link_base.parse_data_task();
     }
 

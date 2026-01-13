@@ -14,10 +14,10 @@
 #include <map>
 #include <mutex>
 
-using namespace std;
-
 namespace unify_link
 {
+    using namespace std;
+
     template <typename T, uint32_t N>
     class Circular_buffer
     {
@@ -172,6 +172,13 @@ namespace unify_link
 
                 // 读取数据段
                 const uint16_t payload_len = frame_head.length();
+                if (payload_len > MAX_FRAME_DATA_LENGTH)
+                {
+                    // 非法长度，跳过本字节重新找头
+                    rec_buff.pop_data(1);
+                    continue;
+                }
+
                 rec_buff.read_data(frame_data.data(), payload_len, sizeof(frame_head));
 
                 // === 数据长度检查 ===
@@ -240,10 +247,9 @@ namespace unify_link
             // 请求帧 返回请求数据
             if (len == 0)
             {
-                build_send_data(component_id, data_id,
-                                reinterpret_cast<const uint8_t *>(registered_map[component_id][data_id].dst),
-                                registered_map[component_id][data_id].payload_length);
-                return true;
+                return build_send_data(component_id, data_id,
+                                       reinterpret_cast<const uint8_t *>(registered_map[component_id][data_id].dst),
+                                       registered_map[component_id][data_id].payload_length);
             }
 
             // 长度不匹配
@@ -283,6 +289,11 @@ namespace unify_link
         uint16_t build_send_data(const uint8_t component_id, const uint8_t data_id, const uint8_t *data,
                                  const uint16_t len)
         {
+            if (len > MAX_FRAME_DATA_LENGTH)
+            {
+                return 0; // 超出最大帧长
+            }
+
             // 如果发送缓冲区空间不足，直接返回 0
             if (send_buff.remain() < sizeof(unify_link_frame_head_t) + len)
             {

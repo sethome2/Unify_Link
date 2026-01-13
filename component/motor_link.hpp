@@ -7,6 +7,8 @@
 
 #include "unify_link_def.h"
 
+#include <functional>
+
 namespace unify_link
 {
     class Motor_link_t
@@ -59,6 +61,8 @@ namespace unify_link
         constexpr static uint8_t MOTOR_SETTING_ID = 3;
         typedef struct
         {
+            uint8_t motor_id;
+
             uint8_t feedback_interval; // 反馈间隔 ms
             uint8_t reset_id;          // 重设ID
             MotorMode mode;            // 电机模式
@@ -69,6 +73,7 @@ namespace unify_link
         {
             int16_t motor_set;
             int16_t motor_set_extra;
+            int16_t motor_set_extra2;
         } motor_set_t;
 #pragma pack(pop)
 
@@ -76,10 +81,13 @@ namespace unify_link
         constexpr static uint8_t MAX_MOTORS = 8;
         motor_basic_t motor_basic[MAX_MOTORS];
         motor_info_t motor_info[MAX_MOTORS];
-        motor_settings_t motor_settings;
+        motor_settings_t motor_settings[MAX_MOTORS];
         motor_set_t motor_set[MAX_MOTORS];
 
     public:
+        std::function<void(const motor_info_t &)> on_motor_info_updated;
+        std::function<void(const motor_settings_t &)> on_motor_settings_updated;
+
         Unify_link_base &link_base;
         constexpr static uint8_t component_id = COMPONENT_ID_MOTORS; // 组件ID
 
@@ -95,27 +103,43 @@ namespace unify_link
                 component_id, MOTOR_INFO_ID, &motor_info, [this](const uint8_t *data, uint16_t len)
                 { return this->handle_motor_info(data, len); }, sizeof(motor_info_t));
 
-            link_base.register_handle_data(component_id, MOTOR_SETTING_ID, &motor_settings, nullptr,
-                                           sizeof(motor_settings));
+            link_base.register_handle_data(
+                component_id, MOTOR_SETTING_ID, &motor_settings, [this](const uint8_t *data, uint16_t len)
+                { return this->handle_motor_settings(data, len); }, sizeof(motor_settings_t));
 
             link_base.register_handle_data(component_id, MOTOR_SET_CURRENT_ID, &motor_set, nullptr, sizeof(motor_set));
         }
 
     public:
-        bool handle_motor_info(const uint8_t *data, uint16_t len)
+        template <typename T>
+        bool handle_motor_payload(const uint8_t *data, uint16_t len, T (&target)[MAX_MOTORS],
+                                  std::function<void(const T &)> &updated_cb)
         {
             (void)len;
 
-            motor_info_t *info = reinterpret_cast<motor_info_t *>(const_cast<uint8_t *>(data));
+            const T *payload = reinterpret_cast<const T *>(data);
 
-            if (info->motor_id < MAX_MOTORS)
+            if (payload->motor_id < MAX_MOTORS)
             {
-                memcpy(&motor_info[info->motor_id], info, sizeof(motor_info_t));
-
+                memcpy(&target[payload->motor_id], payload, sizeof(T));
+                if (updated_cb)
+                {
+                    updated_cb(target[payload->motor_id]);
+                }
                 return true;
             }
 
             return false;
+        }
+
+        bool handle_motor_info(const uint8_t *data, uint16_t len)
+        {
+            return handle_motor_payload(data, len, motor_info, on_motor_info_updated);
+        }
+
+        bool handle_motor_settings(const uint8_t *data, uint16_t len)
+        {
+            return handle_motor_payload(data, len, motor_settings, on_motor_settings_updated);
         }
 
         void send_motor_basic_data() { send_motor_basic_data(motor_basic); }
@@ -124,13 +148,25 @@ namespace unify_link
             link_base.send_packet<component_id>(MOTOR_BASIC_ID, send_data);
         }
 
-        void send_motor_info_data() { send_motor_info_data(motor_info); }
-        void send_motor_info_data(const motor_info_t (&send_data)[MAX_MOTORS])
+        void send_motor_info_data(uint8_t motor_id)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return;
+
+            send_motor_info_data(motor_info[motor_id]);
+        }
+        void send_motor_info_data(const motor_info_t &send_data)
         {
             link_base.send_packet<component_id>(MOTOR_INFO_ID, send_data);
         }
 
-        void send_motor_setting_data() { send_motor_setting_data(motor_settings); }
+        void send_motor_setting_data(uint8_t motor_id)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return;
+
+            send_motor_setting_data(motor_settings[motor_id]);
+        }
         void send_motor_setting_data(const motor_settings_t &send_data)
         {
             link_base.send_packet<component_id>(MOTOR_SETTING_ID, send_data);
@@ -141,13 +177,71 @@ namespace unify_link
         {
             link_base.send_packet<component_id>(MOTOR_SET_CURRENT_ID, send_data);
         }
-        void set_motor_current(uint8_t motor_id, int16_t current)
+
+        bool set_motor_mode(uint8_t motor_id, MotorMode mode)
         {
             if (motor_id >= MAX_MOTORS)
-                return;
+                return false;
+
+            motor_settings[motor_id].mode = mode;
+            send_motor_setting_data(motor_settings[motor_id]);
+            return true;
+        }
+
+        bool set_motor_current(uint8_t motor_id, int16_t current)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return false;
+
+            if (motor_settings[motor_id].mode != MotorMode::CURRENT_CONTROL)
+                return false;
 
             motor_set[motor_id].motor_set = current;
             motor_set[motor_id].motor_set_extra = 0;
+            motor_set[motor_id].motor_set_extra2 = 0;
+            return true;
+        }
+
+        bool set_motor_speed(uint8_t motor_id, int16_t speed)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return false;
+
+            if (motor_settings[motor_id].mode != MotorMode::SPEED_CONTROL)
+                return false;
+
+            motor_set[motor_id].motor_set = speed;
+            motor_set[motor_id].motor_set_extra = 0;
+            motor_set[motor_id].motor_set_extra2 = 0;
+            return true;
+        }
+
+        bool set_motor_position(uint8_t motor_id, uint16_t position, int16_t speed = 0)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return false;
+
+            if (motor_settings[motor_id].mode != MotorMode::POSITION_CONTROL)
+                return false;
+
+            motor_set[motor_id].motor_set = static_cast<int16_t>(position);
+            motor_set[motor_id].motor_set_extra = speed;
+            motor_set[motor_id].motor_set_extra2 = 0;
+            return true;
+        }
+
+        bool set_motor_mit(uint8_t motor_id, uint16_t position, int16_t speed = 0, uint16_t current = 0)
+        {
+            if (motor_id >= MAX_MOTORS)
+                return false;
+
+            if (motor_settings[motor_id].mode != MotorMode::MIT_CONTROL)
+                return false;
+
+            motor_set[motor_id].motor_set = static_cast<int16_t>(position);
+            motor_set[motor_id].motor_set_extra = speed;
+            motor_set[motor_id].motor_set_extra2 = current;
+            return true;
         }
     };
 } // namespace unify_link

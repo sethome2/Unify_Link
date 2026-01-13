@@ -86,14 +86,19 @@ TEST_F(MotorLinkTest, MotorInfoRoundTrip)
 
 TEST_F(MotorLinkTest, MotorSettingRoundTrip)
 {
-    Motor_link_t::motor_settings_t sent = {.feedback_interval = 10, .reset_id = 3};
+    Motor_link_t::motor_settings_t sent = {.motor_id = 4,
+                                           .feedback_interval = 10,
+                                           .reset_id = 3,
+                                           .mode = Motor_link_t::MotorMode::SPEED_CONTROL};
 
-    motor_link->send_motor_setting_data(sent);
+    link_base.build_send_data(Motor_link_t::component_id, Motor_link_t::MOTOR_SETTING_ID,
+                              reinterpret_cast<const uint8_t *>(&sent), sizeof(sent));
     roundTrip();
 
     EXPECT_EQ(link_base.success_count, 1u);
-    EXPECT_EQ(motor_link->motor_settings.feedback_interval, sent.feedback_interval);
-    EXPECT_EQ(motor_link->motor_settings.reset_id, sent.reset_id);
+    EXPECT_EQ(motor_link->motor_settings[sent.motor_id].feedback_interval, sent.feedback_interval);
+    EXPECT_EQ(motor_link->motor_settings[sent.motor_id].reset_id, sent.reset_id);
+    EXPECT_EQ(motor_link->motor_settings[sent.motor_id].mode, sent.mode);
 }
 
 TEST_F(MotorLinkTest, MotorSetCurrentRoundTrip)
@@ -103,6 +108,7 @@ TEST_F(MotorLinkTest, MotorSetCurrentRoundTrip)
     {
         sent[i].motor_set = static_cast<int16_t>(1000 + i * 100);
         sent[i].motor_set_extra = 0;
+        sent[i].motor_set_extra2 = 0;
     }
 
     motor_link->send_motor_set_data(sent);
@@ -113,6 +119,115 @@ TEST_F(MotorLinkTest, MotorSetCurrentRoundTrip)
     {
         EXPECT_EQ(motor_link->motor_set[i].motor_set, sent[i].motor_set);
     }
+}
+
+TEST_F(MotorLinkTest, MotorSetSpeed)
+{
+    const uint8_t motor_id = 1;
+    motor_link->motor_settings[motor_id].mode = Motor_link_t::MotorMode::SPEED_CONTROL;
+
+    const int16_t speed = 1500;
+    EXPECT_TRUE(motor_link->set_motor_speed(motor_id, speed));
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set, speed);
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra, 0);
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra2, 0);
+}
+
+TEST_F(MotorLinkTest, MotorSetPosition)
+{
+    const uint8_t motor_id = 2;
+    motor_link->motor_settings[motor_id].mode = Motor_link_t::MotorMode::POSITION_CONTROL;
+
+    const uint16_t position = 3200;
+    const int16_t speed = 120;
+    EXPECT_TRUE(motor_link->set_motor_position(motor_id, position, speed));
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set, static_cast<int16_t>(position));
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra, speed);
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra2, 0);
+}
+
+TEST_F(MotorLinkTest, MotorSetMit)
+{
+    const uint8_t motor_id = 3;
+    motor_link->motor_settings[motor_id].mode = Motor_link_t::MotorMode::MIT_CONTROL;
+
+    const uint16_t position = 2048;
+    const int16_t speed = 200;
+    const uint16_t current = 50;
+    EXPECT_TRUE(motor_link->set_motor_mit(motor_id, position, speed, current));
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set, static_cast<int16_t>(position));
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra, speed);
+    EXPECT_EQ(motor_link->motor_set[motor_id].motor_set_extra2, static_cast<int16_t>(current));
+}
+
+TEST_F(MotorLinkTest, MotorSetModeMismatchReturnsFalse)
+{
+    const uint8_t motor_id = 4;
+    motor_link->motor_settings[motor_id].mode = Motor_link_t::MotorMode::CURRENT_CONTROL;
+
+    EXPECT_FALSE(motor_link->set_motor_speed(motor_id, 100));
+    EXPECT_FALSE(motor_link->set_motor_position(motor_id, 1000, 10));
+    EXPECT_FALSE(motor_link->set_motor_mit(motor_id, 1000, 10, 5));
+
+    motor_link->motor_settings[motor_id].mode = Motor_link_t::MotorMode::SPEED_CONTROL;
+    EXPECT_FALSE(motor_link->set_motor_current(motor_id, 100));
+}
+
+TEST_F(MotorLinkTest, MotorInfoCallback)
+{
+    Motor_link_t::motor_info_t callback_info{};
+    bool called = false;
+    motor_link->on_motor_info_updated = [&](const Motor_link_t::motor_info_t &info)
+    {
+        callback_info = info;
+        called = true;
+    };
+
+    Motor_link_t::motor_info_t sent = {.motor_id = 2,
+                                       .ratio = 3.2f,
+                                       .max_speed = 1200.0f,
+                                       .max_current = 8.0f,
+                                       .torque_constant = 0.03f,
+                                       .max_position = 4200,
+                                       .run_time = 12,
+                                       .model = {"CallbackMotor"},
+                                       .serial = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+                                                  0x0B, 0x0C},
+                                       .firmware_version = 0x0A0B0C0D};
+
+    link_base.build_send_data(Motor_link_t::component_id, Motor_link_t::MOTOR_INFO_ID,
+                              reinterpret_cast<const uint8_t *>(&sent), sizeof(sent));
+    roundTrip();
+
+    EXPECT_TRUE(called);
+    EXPECT_EQ(callback_info.motor_id, sent.motor_id);
+    EXPECT_FLOAT_EQ(callback_info.ratio, sent.ratio);
+}
+
+TEST_F(MotorLinkTest, MotorSettingsCallback)
+{
+    Motor_link_t::motor_settings_t callback_settings{};
+    bool called = false;
+    motor_link->on_motor_settings_updated = [&](const Motor_link_t::motor_settings_t &settings)
+    {
+        callback_settings = settings;
+        called = true;
+    };
+
+    Motor_link_t::motor_settings_t sent = {.motor_id = 6,
+                                           .feedback_interval = 20,
+                                           .reset_id = 2,
+                                           .mode = Motor_link_t::MotorMode::POSITION_CONTROL};
+
+    link_base.build_send_data(Motor_link_t::component_id, Motor_link_t::MOTOR_SETTING_ID,
+                              reinterpret_cast<const uint8_t *>(&sent), sizeof(sent));
+    roundTrip();
+
+    EXPECT_TRUE(called);
+    EXPECT_EQ(callback_settings.motor_id, sent.motor_id);
+    EXPECT_EQ(callback_settings.feedback_interval, sent.feedback_interval);
+    EXPECT_EQ(callback_settings.reset_id, sent.reset_id);
+    EXPECT_EQ(callback_settings.mode, sent.mode);
 }
 
 TEST_F(MotorLinkTest, MultipleFrames)

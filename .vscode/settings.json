@@ -106,9 +106,9 @@
             "priority": 4
         }
     ],
-    "cmake.cmakePath": "cube-cmake",
+    "cmake.cmakePath": "cmake",
     "cmake.configureArgs": [
-        "-DCMAKE_COMMAND=cube-cmake"
+        "-DCMAKE_COMMAND=cmake"
     ],
     "stm32cube-ide-clangd.path": "cube"
 }

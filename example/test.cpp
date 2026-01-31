@@ -10,8 +10,8 @@ unify_link::Unify_link_base unify_link_base;
 
 unify_link::Motor_link_t motor_link(unify_link_base);
 
-// motor_info_t 字段顺序应与 motor_link.hpp 声明一致
-unify_link::Motor_link_t::motor_info_t motor_info = {
+// info_t 字段顺序应与 motor_link.hpp 声明一致
+unify_link::Motor_link_t::info_t motor_info = {
     0,              // motor_id
     1.0f,           // ratio
     3000.0f,        // max_speed (rad/s)
@@ -24,14 +24,14 @@ unify_link::Motor_link_t::motor_info_t motor_info = {
     0               // firmware_version
 };
 
-unify_link::Motor_link_t::motor_info_t motor_info_arr[unify_link::Motor_link_t::MAX_MOTORS] = {};
+unify_link::Motor_link_t::info_t motor_info_arr[unify_link::Motor_link_t::MAX_MOTORS] = {};
 
 uint8_t buff[4096] = {0};
 uint32_t buff_len = 0;
 
 int main()
 {
-    motor_link.on_motor_info_updated = [](const unify_link::Motor_link_t::motor_info_t &info)
+    motor_link.on_motor_info_updated = [](const unify_link::Motor_link_t::info_t &info)
     {
         std::cout << "Motor info updated. motor_id=" << static_cast<int>(info.motor_id) << " model=" << info.model
                   << std::endl;
@@ -40,8 +40,7 @@ int main()
     for (int i = 0; i < 10; ++i)
     {
         motor_info_arr[0] = motor_info;
-        unify_link_base.build_send_data(unify_link::Motor_link_t::component_id,
-                                        unify_link::Motor_link_t::MOTOR_INFO_ID,
+        unify_link_base.build_send_data(unify_link::Motor_link_t::component_id, unify_link::Motor_link_t::MOTOR_INFO_ID,
                                         reinterpret_cast<const uint8_t *>(&motor_info_arr[0]),
                                         sizeof(motor_info_arr[0]));
         unify_link_base.send_buff_pop(buff, &buff_len);

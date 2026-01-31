@@ -309,17 +309,17 @@ TEST_F(IntegrationTest, MotorLinkRoundTrip)
 {
     Motor_link_t motor_link(link_base);
 
-    // Create motor info - 发送单个 motor_info_t
-    Motor_link_t::motor_info_t sent_info = {.motor_id = 1,
-                                            .ratio = 3.5f,
-                                            .max_speed = 3000.0f,
-                                            .max_current = 10.0f,
-                                            .torque_constant = 0.1f,
-                                            .max_position = 100000,
-                                            .run_time = 500,
-                                            .model = {"TestMotor"},
-                                            .serial = {0x01, 0x02, 0x03},
-                                            .firmware_version = 0x010203};
+    // Create motor info - 发送单个 info_t
+    Motor_link_t::info_t sent_info = {.motor_id = 1,
+                                      .ratio = 3.5f,
+                                      .max_speed = 3000.0f,
+                                      .max_current = 10.0f,
+                                      .torque_constant = 0.1f,
+                                      .max_position = 100000,
+                                      .run_time = 500,
+                                      .model = {"TestMotor"},
+                                      .serial = {0x01, 0x02, 0x03},
+                                      .firmware_version = 0x010203};
 
     // 发送单个 motor_info（handle_motor_info 会根据 motor_id 放到正确位置）
     link_base.build_send_data(Motor_link_t::component_id, Motor_link_t::MOTOR_INFO_ID,

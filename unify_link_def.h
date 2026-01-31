@@ -18,6 +18,9 @@
 #define MAX_FRAME_LENGTH (MAX_FRAME_DATA_LENGTH + sizeof(unify_link_frame_head_t))
 #define MAX_RECV_BUFF_LENGTH (MAX_FRAME_DATA_LENGTH * 4)
 #define MAX_SEND_BUFF_LENGTH (MAX_FRAME_DATA_LENGTH * 4)
+#ifndef UNIFY_LINK_MAX_HANDLERS
+#define UNIFY_LINK_MAX_HANDLERS 128
+#endif
 
 namespace unify_link
 {

@@ -190,66 +190,66 @@ PYBIND11_MODULE(unify_link, m)
         .value("POSITION_CONTROL", Motor_link_t::MotorMode::POSITION_CONTROL)
         .value("MIT_CONTROL", Motor_link_t::MotorMode::MIT_CONTROL);
 
-    py::class_<Motor_link_t::motor_basic_t>(m, "MotorBasic")
+    py::class_<Motor_link_t::feedback_t>(m, "MotorBasic")
         .def(py::init<>())
-        .def_readwrite("position", &Motor_link_t::motor_basic_t::position)
-        .def_readwrite("speed", &Motor_link_t::motor_basic_t::speed)
-        .def_readwrite("current", &Motor_link_t::motor_basic_t::current)
-        .def_readwrite("temperature", &Motor_link_t::motor_basic_t::temperature)
-        .def_readwrite("error_code", &Motor_link_t::motor_basic_t::error_code);
+        .def_readwrite("position", &Motor_link_t::feedback_t::position)
+        .def_readwrite("speed", &Motor_link_t::feedback_t::speed)
+        .def_readwrite("current", &Motor_link_t::feedback_t::current)
+        .def_readwrite("temperature", &Motor_link_t::feedback_t::temperature)
+        .def_readwrite("error_code", &Motor_link_t::feedback_t::error_code);
 
-    py::class_<Motor_link_t::motor_info_t>(m, "MotorInfo")
+    py::class_<Motor_link_t::info_t>(m, "MotorInfo")
         .def(py::init<>())
-        .def_readwrite("motor_id", &Motor_link_t::motor_info_t::motor_id)
-        .def_readwrite("ratio", &Motor_link_t::motor_info_t::ratio)
-        .def_readwrite("max_speed", &Motor_link_t::motor_info_t::max_speed)
-        .def_readwrite("max_current", &Motor_link_t::motor_info_t::max_current)
-        .def_readwrite("torque_constant", &Motor_link_t::motor_info_t::torque_constant)
-        .def_readwrite("max_position", &Motor_link_t::motor_info_t::max_position)
-        .def_readwrite("run_time", &Motor_link_t::motor_info_t::run_time)
+        .def_readwrite("motor_id", &Motor_link_t::info_t::motor_id)
+        .def_readwrite("ratio", &Motor_link_t::info_t::ratio)
+        .def_readwrite("max_speed", &Motor_link_t::info_t::max_speed)
+        .def_readwrite("max_current", &Motor_link_t::info_t::max_current)
+        .def_readwrite("torque_constant", &Motor_link_t::info_t::torque_constant)
+        .def_readwrite("max_position", &Motor_link_t::info_t::max_position)
+        .def_readwrite("run_time", &Motor_link_t::info_t::run_time)
         .def_property(
             "model",
-            [](const Motor_link_t::motor_info_t &self) { return char_array_to_string(self.model, sizeof(self.model)); },
-            [](Motor_link_t::motor_info_t &self, const std::string &value)
+            [](const Motor_link_t::info_t &self) { return char_array_to_string(self.model, sizeof(self.model)); },
+            [](Motor_link_t::info_t &self, const std::string &value)
             { assign_char_array(self.model, sizeof(self.model), value); })
         .def_property(
-            "serial", [](const Motor_link_t::motor_info_t &self)
+            "serial", [](const Motor_link_t::info_t &self)
             { return std::vector<uint8_t>(self.serial, self.serial + sizeof(self.serial)); },
-            [](Motor_link_t::motor_info_t &self, const std::vector<uint8_t> &serial)
+            [](Motor_link_t::info_t &self, const std::vector<uint8_t> &serial)
             { assign_array(self.serial, serial, "serial"); })
-        .def_readwrite("firmware_version", &Motor_link_t::motor_info_t::firmware_version);
+        .def_readwrite("firmware_version", &Motor_link_t::info_t::firmware_version);
 
-    py::class_<Motor_link_t::motor_settings_t>(m, "MotorSettings")
+    py::class_<Motor_link_t::settings_t>(m, "MotorSettings")
         .def(py::init<>())
-        .def_readwrite("feedback_interval", &Motor_link_t::motor_settings_t::feedback_interval)
-        .def_readwrite("reset_id", &Motor_link_t::motor_settings_t::reset_id)
+        .def_readwrite("feedback_interval", &Motor_link_t::settings_t::feedback_interval)
+        .def_readwrite("reset_id", &Motor_link_t::settings_t::reset_id)
         .def_property(
-            "mode", [](const Motor_link_t::motor_settings_t &self) { return self.mode; },
-            [](Motor_link_t::motor_settings_t &self, Motor_link_t::MotorMode mode) { self.mode = mode; });
+            "mode", [](const Motor_link_t::settings_t &self) { return self.mode; },
+            [](Motor_link_t::settings_t &self, Motor_link_t::MotorMode mode) { self.mode = mode; });
 
-    py::class_<Motor_link_t::motor_set_t>(m, "MotorSet")
+    py::class_<Motor_link_t::set_t>(m, "MotorSet")
         .def(py::init<>())
-        .def_readwrite("motor_set", &Motor_link_t::motor_set_t::motor_set)
-        .def_readwrite("motor_set_extra", &Motor_link_t::motor_set_t::motor_set_extra)
-        .def_readwrite("motor_set_extra2", &Motor_link_t::motor_set_t::motor_set_extra2);
+        .def_readwrite("set", &Motor_link_t::set_t::set)
+        .def_readwrite("set_extra", &Motor_link_t::set_t::set_extra)
+        .def_readwrite("set_extra2", &Motor_link_t::set_t::set_extra2);
 
     py::class_<Motor_link_t>(m, "MotorLink")
         .def(py::init<Unify_link_base &>(), py::arg("link_base"), py::keep_alive<1, 2>())
         .def_property(
             "motor_basic", [](Motor_link_t &self) { return copy_array(self.motor_basic); },
-            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_basic_t> &values)
+            [](Motor_link_t &self, const std::vector<Motor_link_t::feedback_t> &values)
             { assign_array(self.motor_basic, values, "motor_basic"); })
         .def_property(
             "motor_info", [](Motor_link_t &self) { return copy_array(self.motor_info); },
-            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_info_t> &values)
+            [](Motor_link_t &self, const std::vector<Motor_link_t::info_t> &values)
             { assign_array(self.motor_info, values, "motor_info"); })
         .def_property(
             "motor_settings", [](Motor_link_t &self) { return copy_array(self.motor_settings); },
-            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_settings_t> &values)
+            [](Motor_link_t &self, const std::vector<Motor_link_t::settings_t> &values)
             { assign_array(self.motor_settings, values, "motor_settings"); })
         .def_property(
             "motor_set", [](Motor_link_t &self) { return copy_array(self.motor_set); },
-            [](Motor_link_t &self, const std::vector<Motor_link_t::motor_set_t> &values)
+            [](Motor_link_t &self, const std::vector<Motor_link_t::set_t> &values)
             { assign_array(self.motor_set, values, "motor_set"); })
         .def_readwrite("on_motor_info_updated", &Motor_link_t::on_motor_info_updated)
         .def_readwrite("on_motor_settings_updated", &Motor_link_t::on_motor_settings_updated)

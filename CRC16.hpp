@@ -268,7 +268,7 @@ namespace unify_link
     };
 
     // 查表法计算crc
-    uint16_t crc16_calculation(const uint8_t *ptr, uint16_t len, uint16_t crc = 0xFFFF)
+    inline uint16_t crc16_calculation(const uint8_t *ptr, uint16_t len, uint16_t crc = 0xFFFF)
     {
         while (len--)
         {

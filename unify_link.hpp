@@ -11,8 +11,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
-#include <map>
-#include <mutex>
+#include <unordered_map>
 
 namespace unify_link
 {
@@ -159,7 +158,11 @@ namespace unify_link
         uint64_t success_count = 0;
 
     public:
-        Unify_link_base() { frame_data.fill(0); }
+        Unify_link_base()
+        {
+            frame_data.fill(0);
+            registered_map.reserve(UNIFY_LINK_MAX_HANDLERS);
+        }
 
         void parse_data_task()
         {
@@ -226,42 +229,49 @@ namespace unify_link
         }
 
     public:
-        registered_item_t registered_map[256][256]{};
+        static constexpr uint16_t make_key(uint8_t component_id, uint8_t data_id)
+        {
+            return static_cast<uint16_t>((static_cast<uint16_t>(component_id) << 8) | data_id);
+        }
 
-        void register_handle_data(uint8_t component_id, uint8_t data_id, void *dst, handle_data_func_t func,
+        std::unordered_map<uint16_t, registered_item_t> registered_map;
+
+        bool register_handle_data(uint8_t component_id, uint8_t data_id, void *dst, handle_data_func_t func,
                                   uint16_t length)
         {
             // 线程/中断安全约束：该函数建议仅在初始化阶段调用。
             // 运行时若与 parse_data_task() 并发修改 map，会造成未定义行为。
-            registered_map[component_id][data_id].callback = std::move(func);
-            registered_map[component_id][data_id].dst = dst;
-            registered_map[component_id][data_id].payload_length = length;
+            auto &item = registered_map[make_key(component_id, data_id)];
+            item.callback = std::move(func);
+            item.dst = dst;
+            item.payload_length = length;
+            return true;
         }
 
         bool handle_data(uint8_t component_id, uint8_t data_id, const uint8_t *data, uint16_t len)
         {
             // 未注册
-            if (registered_map[component_id][data_id].dst == nullptr)
+            auto it = registered_map.find(make_key(component_id, data_id));
+            if (it == registered_map.end() || it->second.dst == nullptr)
                 return false;
 
             // 请求帧 返回请求数据
             if (len == 0)
             {
-                return build_send_data(component_id, data_id,
-                                       reinterpret_cast<const uint8_t *>(registered_map[component_id][data_id].dst),
-                                       registered_map[component_id][data_id].payload_length);
+                return build_send_data(component_id, data_id, reinterpret_cast<const uint8_t *>(it->second.dst),
+                                       it->second.payload_length);
             }
 
             // 长度不匹配
-            if (registered_map[component_id][data_id].payload_length != len)
+            if (it->second.payload_length != len)
                 return false;
 
             // 处理数据 or 复制数据到目标地址
-            const auto &callback = registered_map[component_id][data_id].callback;
+            const auto &callback = it->second.callback;
             if (callback)
                 return callback(data, len);
             else
-                std::memcpy(registered_map[component_id][data_id].dst, data, len);
+                std::memcpy(it->second.dst, data, len);
             return true;
         }
 

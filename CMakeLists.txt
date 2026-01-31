@@ -17,6 +17,7 @@ option(UNIFY_LINK_BUILD_EXAMPLES "Build examples" ON)
 option(UNIFY_LINK_ENABLE_COVERAGE "Enable code coverage" OFF)
 option(UNIFY_LINK_INSTALL "Generate install target" OFF)
 option(UNIFY_LINK_BUILD_PYTHON "Build Python bindings" ON)
+option(UNIFY_LINK_USE_THREADS "Link with system thread library when available" ON)
 
 # ============================================================================
 # C++ Standard Configuration
@@ -52,9 +53,15 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
-# Thread support (for atomic operations in Circular_buffer)
-find_package(Threads REQUIRED)
-target_link_libraries(${PROJECT_NAME} INTERFACE Threads::Threads)
+# Thread support (optional, for platforms that provide a thread library)
+if(UNIFY_LINK_USE_THREADS)
+    find_package(Threads QUIET)
+    if(TARGET Threads::Threads)
+        target_link_libraries(${PROJECT_NAME} INTERFACE Threads::Threads)
+    else()
+        message(WARNING "Threads library not found; continuing without thread linkage.")
+    endif()
+endif()
 
 # ============================================================================
 # Python bindings (pybind11)
@@ -130,66 +137,31 @@ if(UNIFY_LINK_BUILD_TESTS)
 
     include(GoogleTest)
 
-    # SPSC Ring Buffer Test
-    add_executable(spsc_ringbuffer_test
-        test/spsc_ringbuffer_test.cpp
+    # Auto-register tests from test/*.cpp
+    file(GLOB test_sources CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/*.cpp
     )
-    target_link_libraries(spsc_ringbuffer_test PRIVATE
-        ${PROJECT_NAME}
-        Threads::Threads
-    )
-    add_test(NAME spsc_ringbuffer_test COMMAND spsc_ringbuffer_test)
 
-    # Main Unit Test Suite (using GoogleTest)
-    add_executable(unify_link_tests
-        test/unify_link_test.cpp
-    )
-    target_link_libraries(unify_link_tests PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest_main
-        Threads::Threads
-    )
-    gtest_discover_tests(unify_link_tests)
+    function(unify_link_add_test test_source)
+        get_filename_component(test_name ${test_source} NAME_WE)
 
-    # CRC16 Test
-    add_executable(crc16_test
-        test/crc16_test.cpp
-    )
-    target_link_libraries(crc16_test PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest_main
-    )
-    gtest_discover_tests(crc16_test)
+        add_executable(${test_name} ${test_source})
+        target_link_libraries(${test_name} PRIVATE ${PROJECT_NAME})
+        if(TARGET Threads::Threads)
+            target_link_libraries(${test_name} PRIVATE Threads::Threads)
+        endif()
 
-    # Motor Link Test
-    add_executable(motor_link_test
-        test/motor_link_test.cpp
-    )
-    target_link_libraries(motor_link_test PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest_main
-    )
-    gtest_discover_tests(motor_link_test)
+        if(test_name STREQUAL "spsc_ringbuffer_test")
+            add_test(NAME ${test_name} COMMAND ${test_name})
+        else()
+            target_link_libraries(${test_name} PRIVATE GTest::gtest_main)
+            gtest_discover_tests(${test_name})
+        endif()
+    endfunction()
 
-    # Encoder Link Test
-    add_executable(encoder_link_test
-        test/encoder_link_test.cpp
-    )
-    target_link_libraries(encoder_link_test PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest_main
-    )
-    gtest_discover_tests(encoder_link_test)
-
-    # Update Link Test
-    add_executable(update_link_test
-        test/update_link_test.cpp
-    )
-    target_link_libraries(update_link_test PRIVATE
-        ${PROJECT_NAME}
-        GTest::gtest_main
-    )
-    gtest_discover_tests(update_link_test)
+    foreach(test_source IN LISTS test_sources)
+        unify_link_add_test(${test_source})
+    endforeach()
 endif()
 
 # ============================================================================

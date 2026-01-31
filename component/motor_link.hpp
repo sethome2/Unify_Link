@@ -77,6 +77,16 @@ namespace unify_link
             int16_t set_extra2;
         } set_t;
 
+        constexpr static uint8_t MOTOR_PID_ID = 5;
+        typedef struct
+        {
+            uint8_t motor_id;
+
+            PIDParams_t current_pid;
+            PIDParams_t speed_pid;
+            PIDParams_t position_pid;
+        } pid_t;
+
 #pragma pack(pop)
 
         // Maximum number of motors
@@ -85,11 +95,14 @@ namespace unify_link
         info_t motor_info[MAX_MOTORS];
         settings_t motor_settings[MAX_MOTORS];
         set_t motor_set[MAX_MOTORS];
+        pid_t motor_pid;
 
     public:
+        std::function<void(const feedback_t (&)[MAX_MOTORS])> on_motor_basic_updated;
         std::function<void(const info_t &)> on_motor_info_updated;
         std::function<void(const settings_t &)> on_motor_settings_updated;
         std::function<void(const set_t (&)[MAX_MOTORS])> on_motor_set_updated;
+        std::function<void(const pid_t &)> on_motor_pid_updated;
 
         Unify_link_base &link_base;
         constexpr static uint8_t component_id = COMPONENT_ID_MOTORS; // 组件ID
@@ -103,15 +116,15 @@ namespace unify_link
             link_base.register_handle_data(component_id, MOTOR_BASIC_ID, &motor_basic, nullptr, sizeof(motor_basic));
 
             link_base.register_handle_data(
-                component_id, MOTOR_INFO_ID, &motor_info, [this](const uint8_t *data, uint16_t len)
+                component_id, MOTOR_INFO_ID, nullptr, [this](const uint8_t *data, uint16_t len)
                 { return this->handle_motor_info(data, len); }, sizeof(info_t));
 
             link_base.register_handle_data(
-                component_id, MOTOR_SETTING_ID, &motor_settings, [this](const uint8_t *data, uint16_t len)
+                component_id, MOTOR_SETTING_ID, nullptr, [this](const uint8_t *data, uint16_t len)
                 { return this->handle_motor_settings(data, len); }, sizeof(settings_t));
 
             link_base.register_handle_data(
-                component_id, MOTOR_SET_ID, &motor_set,
+                component_id, MOTOR_SET_ID, nullptr,
                 [this](const uint8_t *data, uint16_t len)
                 {
                     if (len != sizeof(motor_set))
@@ -127,6 +140,10 @@ namespace unify_link
                     return true;
                 },
                 sizeof(motor_set));
+
+            link_base.register_handle_data(
+                component_id, MOTOR_PID_ID, &motor_pid,
+                [this](const uint8_t *data, uint16_t len) { return this->handle_motor_pid(data, len); }, sizeof(pid_t));
         }
 
     public:
@@ -151,6 +168,17 @@ namespace unify_link
             return false;
         }
 
+        bool handle_motor_basic(const uint8_t *data, uint16_t len)
+        {
+            // already copied by unify_link_base
+            (void)len;
+            (void)data;
+
+            if (on_motor_basic_updated)
+                on_motor_basic_updated(motor_basic);
+            return true;
+        }
+
         bool handle_motor_info(const uint8_t *data, uint16_t len)
         {
             return handle_motor_payload(data, len, motor_info, on_motor_info_updated);
@@ -159,6 +187,19 @@ namespace unify_link
         bool handle_motor_settings(const uint8_t *data, uint16_t len)
         {
             return handle_motor_payload(data, len, motor_settings, on_motor_settings_updated);
+        }
+
+        bool handle_motor_pid(const uint8_t *data, uint16_t len)
+        {
+            // already copied by unify_link_base
+            (void)len;
+            (void)data;
+
+            if (on_motor_pid_updated)
+            {
+                on_motor_pid_updated(motor_pid);
+            }
+            return true;
         }
 
         void send_motor_basic_data() { send_motor_basic_data(motor_basic); }

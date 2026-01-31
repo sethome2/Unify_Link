@@ -83,6 +83,18 @@ namespace unify_link
         DECODE_ERROR,
     };
 
+    struct PIDParams_t
+    {
+        float k = 1.0f;
+        float p = 1.0f;
+        float i = 0.0f;
+        float d = 0.0f;
+
+        float ramp_lim = 0.5f;
+        float i_max = 0.0f;
+        float output_max = 1.0f;
+    };
+
 } // namespace unify_link
 
 #endif // UNIFY_LINK_H

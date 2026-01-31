@@ -250,15 +250,18 @@ namespace unify_link
 
         bool handle_data(uint8_t component_id, uint8_t data_id, const uint8_t *data, uint16_t len)
         {
-            // 未注册
             auto it = registered_map.find(make_key(component_id, data_id));
-            if (it == registered_map.end() || it->second.dst == nullptr)
+
+            // 未注册
+            if (it == registered_map.end())
                 return false;
 
+            auto dst = it->second.dst;
+
             // 请求帧 返回请求数据
-            if (len == 0)
+            if (len == 0 and dst != nullptr)
             {
-                return build_send_data(component_id, data_id, reinterpret_cast<const uint8_t *>(it->second.dst),
+                return build_send_data(component_id, data_id, reinterpret_cast<const uint8_t *>(dst),
                                        it->second.payload_length);
             }
 
@@ -266,12 +269,14 @@ namespace unify_link
             if (it->second.payload_length != len)
                 return false;
 
-            // 处理数据 or 复制数据到目标地址
+            // 复制数据到目标地址
+            if (dst != nullptr)
+                std::memcpy(dst, data, len);
+
+            // 处理数据 调用回函数
             const auto &callback = it->second.callback;
             if (callback)
                 return callback(data, len);
-            else
-                std::memcpy(it->second.dst, data, len);
             return true;
         }
 

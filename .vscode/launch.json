@@ -1,95 +1,53 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Debug: Example Basic",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/example_basic.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Debug: SPSC RingBuffer Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/spsc_ringbuffer_test.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Debug: Unify Link Tests",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/unify_link_tests.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Debug: CRC16 Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/crc16_test.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Debug: Motor Link Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/motor_link_test.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Debug: Encoder Link Test",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/build/Debug/encoder_link_test.exe",
-            "args": [],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        },
-        {
-            "name": "Run All Tests (ctest Debug)",
-            "type": "cppvsdbg",
-            "request": "launch",
-            "program": "ctest",
-            "args": [
-                "--test-dir",
-                "${workspaceFolder}/build",
-                "-C",
-                "Debug",
-                "--output-on-failure"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "console": "integratedTerminal",
-            "preLaunchTask": "CMake: Build"
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Example (Debug)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/example_basic.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "Run Example (Release)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Release/example_basic.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "CTest (Debug)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "ctest.exe",
+      "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Debug", "--output-on-failure"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "cmake: build"
+    },
+    {
+      "name": "CTest (Release)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "ctest.exe",
+      "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Release", "--output-on-failure"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "cmake: build"
+    }
+  ]
 }

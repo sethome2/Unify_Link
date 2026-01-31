@@ -1,188 +1,73 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "CMake: Configure (Debug)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S",
-                "${workspaceFolder}",
-                "-B",
-                "${workspaceFolder}/build",
-                "-G",
-                "Ninja",
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DUNIFY_LINK_BUILD_TESTS=ON",
-                "-DUNIFY_LINK_BUILD_EXAMPLES=ON"
-            ],
-            "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Configure CMake project in Debug mode"
-        },
-        {
-            "label": "CMake: Configure (Release)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S",
-                "${workspaceFolder}",
-                "-B",
-                "${workspaceFolder}/build",
-                "-G",
-                "Ninja",
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DUNIFY_LINK_BUILD_TESTS=ON",
-                "-DUNIFY_LINK_BUILD_EXAMPLES=ON"
-            ],
-            "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Configure CMake project in Release mode"
-        },
-        {
-            "label": "CMake: Configure (Coverage)",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "-S",
-                "${workspaceFolder}",
-                "-B",
-                "${workspaceFolder}/build",
-                "-G",
-                "Ninja",
-                "-DCMAKE_BUILD_TYPE=Debug",
-                "-DUNIFY_LINK_BUILD_TESTS=ON",
-                "-DUNIFY_LINK_ENABLE_COVERAGE=ON"
-            ],
-            "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ],
-            "detail": "Configure CMake with code coverage enabled"
-        },
-        {
-            "label": "CMake: Build",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "${workspaceFolder}/build",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "problemMatcher": [
-                "$gcc",
-                "$msCompile"
-            ],
-            "detail": "Build the project",
-            "dependsOn": []
-        },
-        {
-            "label": "CMake: Clean",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "${workspaceFolder}/build",
-                "--target",
-                "clean"
-            ],
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "Clean build artifacts"
-        },
-        {
-            "label": "CMake: Rebuild",
-            "type": "shell",
-            "command": "cmake",
-            "args": [
-                "--build",
-                "${workspaceFolder}/build",
-                "--clean-first",
-                "--parallel"
-            ],
-            "group": "build",
-            "problemMatcher": [
-                "$gcc",
-                "$msCompile"
-            ],
-            "detail": "Clean and rebuild the project"
-        },
-        {
-            "label": "Run All Tests",
-            "type": "shell",
-            "command": "ctest",
-            "args": [
-                "--test-dir",
-                "${workspaceFolder}/build",
-                "-C",
-                "Debug",
-                "--output-on-failure",
-                "--parallel"
-            ],
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "problemMatcher": [],
-            "detail": "Run all unit tests using CTest"
-        },
-        {
-            "label": "Run Tests (Verbose)",
-            "type": "shell",
-            "command": "ctest",
-            "args": [
-                "--test-dir",
-                "${workspaceFolder}/build",
-                "-C",
-                "Debug",
-                "--output-on-failure",
-                "--verbose"
-            ],
-            "group": "test",
-            "problemMatcher": [],
-            "detail": "Run all unit tests with verbose output"
-        },
-        {
-            "label": "Run SPSC RingBuffer Test",
-            "type": "shell",
-            "command": "${workspaceFolder}/build/spsc_ringbuffer_test",
-            "windows": {
-                "command": "${workspaceFolder}/build/spsc_ringbuffer_test.exe"
-            },
-            "group": "test",
-            "problemMatcher": [],
-            "detail": "Run SPSC ring buffer stress test"
-        },
-        {
-            "label": "Run Example",
-            "type": "shell",
-            "command": "${workspaceFolder}/build/example_basic",
-            "windows": {
-                "command": "${workspaceFolder}/build/example_basic.exe"
-            },
-            "group": "test",
-            "problemMatcher": [],
-            "detail": "Run basic example"
-        },
-        {
-            "label": "Full Build & Test",
-            "dependsOn": [
-                "CMake: Configure (Debug)",
-                "CMake: Build",
-                "Run All Tests"
-            ],
-            "dependsOrder": "sequence",
-            "group": "build",
-            "problemMatcher": [],
-            "detail": "Configure, build, and run all tests"
-        }
-    ]
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "buildType",
+      "type": "pickString",
+      "description": "CMake build type",
+      "options": ["Debug", "Release"],
+      "default": "Debug"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "cmake: configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build",
+        "-DUNIFY_LINK_BUILD_EXAMPLES=ON",
+        "-DUNIFY_LINK_BUILD_TESTS=ON",
+        "-DUNIFY_LINK_BUILD_PYTHON=ON",
+        "-DCMAKE_BUILD_TYPE=${input:buildType}"
+      ],
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "cmake: build",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "build",
+        "--config",
+        "${input:buildType}"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "dependsOn": ["cmake: configure"]
+    },
+    {
+      "label": "run: example_basic",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        "if (Test-Path 'build/${input:buildType}/example_basic.exe') { & 'build/${input:buildType}/example_basic.exe' } else { & 'build/example_basic.exe' }"
+      ],
+      "problemMatcher": [],
+      "dependsOn": ["cmake: build"]
+    },
+    {
+      "label": "test: ctest",
+      "type": "shell",
+      "command": "ctest",
+      "args": [
+        "--test-dir",
+        "build",
+        "-C",
+        "${input:buildType}",
+        "--output-on-failure"
+      ],
+      "problemMatcher": [],
+      "dependsOn": ["cmake: build"]
+    }
+  ]
 }

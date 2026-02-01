@@ -221,6 +221,7 @@ PYBIND11_MODULE(unify_link, m)
 
     py::class_<Motor_link_t::settings_t>(m, "MotorSettings")
         .def(py::init<>())
+        .def_readwrite("motor_id", &Motor_link_t::settings_t::motor_id)
         .def_readwrite("feedback_interval", &Motor_link_t::settings_t::feedback_interval)
         .def_readwrite("reset_id", &Motor_link_t::settings_t::reset_id)
         .def_property(
@@ -232,6 +233,23 @@ PYBIND11_MODULE(unify_link, m)
         .def_readwrite("set", &Motor_link_t::set_t::set)
         .def_readwrite("set_extra", &Motor_link_t::set_t::set_extra)
         .def_readwrite("set_extra2", &Motor_link_t::set_t::set_extra2);
+
+    py::class_<PIDParams_t>(m, "PIDParams")
+        .def(py::init<>())
+        .def_readwrite("k", &PIDParams_t::k)
+        .def_readwrite("p", &PIDParams_t::p)
+        .def_readwrite("i", &PIDParams_t::i)
+        .def_readwrite("d", &PIDParams_t::d)
+        .def_readwrite("ramp_lim", &PIDParams_t::ramp_lim)
+        .def_readwrite("i_max", &PIDParams_t::i_max)
+        .def_readwrite("output_max", &PIDParams_t::output_max);
+
+    py::class_<Motor_link_t::pid_t>(m, "MotorPID")
+        .def(py::init<>())
+        .def_readwrite("motor_id", &Motor_link_t::pid_t::motor_id)
+        .def_readwrite("current_pid", &Motor_link_t::pid_t::current_pid)
+        .def_readwrite("speed_pid", &Motor_link_t::pid_t::speed_pid)
+        .def_readwrite("position_pid", &Motor_link_t::pid_t::position_pid);
 
     py::class_<Motor_link_t>(m, "MotorLink")
         .def(py::init<Unify_link_base &>(), py::arg("link_base"), py::keep_alive<1, 2>())
@@ -251,8 +269,53 @@ PYBIND11_MODULE(unify_link, m)
             "motor_set", [](Motor_link_t &self) { return copy_array(self.motor_set); },
             [](Motor_link_t &self, const std::vector<Motor_link_t::set_t> &values)
             { assign_array(self.motor_set, values, "motor_set"); })
+        .def_property(
+            "motor_pid", [](Motor_link_t &self) { return self.motor_pid; },
+            [](Motor_link_t &self, const Motor_link_t::pid_t &value) { self.motor_pid = value; })
+        .def_property(
+            "on_motor_basic_updated",
+            [](Motor_link_t &) { return py::none(); },
+            [](Motor_link_t &self, const py::function &cb)
+            {
+                self.on_motor_basic_updated = [cb](const Motor_link_t::feedback_t (&data)[Motor_link_t::MAX_MOTORS])
+                {
+                    py::gil_scoped_acquire gil;
+                    cb(copy_array(data));
+                };
+            })
         .def_readwrite("on_motor_info_updated", &Motor_link_t::on_motor_info_updated)
         .def_readwrite("on_motor_settings_updated", &Motor_link_t::on_motor_settings_updated)
+        .def_property(
+            "on_motor_set_updated",
+            [](Motor_link_t &) { return py::none(); },
+            [](Motor_link_t &self, const py::function &cb)
+            {
+                self.on_motor_set_updated = [cb](const Motor_link_t::set_t (&data)[Motor_link_t::MAX_MOTORS])
+                {
+                    py::gil_scoped_acquire gil;
+                    cb(copy_array(data));
+                };
+            })
+        .def_readwrite("on_motor_pid_updated", &Motor_link_t::on_motor_pid_updated)
+        .def("send_motor_basic_data", py::overload_cast<>(&Motor_link_t::send_motor_basic_data))
+        .def("send_motor_info_data", py::overload_cast<uint8_t>(&Motor_link_t::send_motor_info_data),
+             py::arg("motor_id"))
+        .def("send_motor_info_data", py::overload_cast<const Motor_link_t::info_t &>(&Motor_link_t::send_motor_info_data),
+             py::arg("info"))
+        .def("send_motor_setting_data", py::overload_cast<uint8_t>(&Motor_link_t::send_motor_setting_data),
+             py::arg("motor_id"))
+        .def("send_motor_setting_data",
+             py::overload_cast<const Motor_link_t::settings_t &>(&Motor_link_t::send_motor_setting_data),
+             py::arg("settings"))
+        .def("send_motor_set_data", py::overload_cast<>(&Motor_link_t::send_motor_set_data))
+        .def("set_motor_mode", &Motor_link_t::set_motor_mode, py::arg("motor_id"), py::arg("mode"))
+        .def("set_motor_current", &Motor_link_t::set_motor_current, py::arg("motor_id"), py::arg("currentq"),
+             py::arg("currentd") = 0)
+        .def("set_motor_speed", &Motor_link_t::set_motor_speed, py::arg("motor_id"), py::arg("speed"))
+        .def("set_motor_position", &Motor_link_t::set_motor_position, py::arg("motor_id"), py::arg("position"),
+             py::arg("speed") = 0)
+        .def("set_motor_mit", &Motor_link_t::set_motor_mit, py::arg("motor_id"), py::arg("position"),
+             py::arg("speed") = 0, py::arg("current") = 0)
         .def_readonly_static("component_id", &Motor_link_t::component_id)
         .def_readonly_static("MAX_MOTORS", &Motor_link_t::MAX_MOTORS);
 

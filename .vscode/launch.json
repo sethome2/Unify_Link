@@ -3,51 +3,97 @@
   "configurations": [
     {
       "name": "Run Example (Debug)",
-      "type": "cppvsdbg",
+      "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Debug/example_basic.exe",
+      "program": "${workspaceFolder}/build/example_basic",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "environment": [],
+      "MIMode": "gdb",
       "console": "integratedTerminal",
-      "preLaunchTask": "cmake: build"
+      "preLaunchTask": "cmake: build",
+      "windows": {
+        "type": "cppvsdbg",
+        "program": "${workspaceFolder}/build/Debug/example_basic.exe"
+      },
+      "linux": {
+        "MIMode": "gdb"
+      },
+      "osx": {
+        "MIMode": "lldb"
+      }
     },
     {
       "name": "Run Example (Release)",
-      "type": "cppvsdbg",
+      "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/Release/example_basic.exe",
+      "program": "${workspaceFolder}/build/example_basic",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "environment": [],
+      "MIMode": "gdb",
       "console": "integratedTerminal",
-      "preLaunchTask": "cmake: build"
+      "preLaunchTask": "cmake: build",
+      "windows": {
+        "type": "cppvsdbg",
+        "program": "${workspaceFolder}/build/Release/example_basic.exe"
+      },
+      "linux": {
+        "MIMode": "gdb"
+      },
+      "osx": {
+        "MIMode": "lldb"
+      }
     },
     {
       "name": "CTest (Debug)",
-      "type": "cppvsdbg",
+      "type": "cppdbg",
       "request": "launch",
-      "program": "ctest.exe",
-      "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Debug", "--output-on-failure"],
+      "program": "ctest",
+      "args": ["--test-dir", "${workspaceFolder}/build", "--output-on-failure"],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "environment": [],
+      "MIMode": "gdb",
       "console": "integratedTerminal",
-      "preLaunchTask": "cmake: build"
+      "preLaunchTask": "cmake: build",
+      "windows": {
+        "type": "cppvsdbg",
+        "program": "ctest.exe",
+        "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Debug", "--output-on-failure"]
+      },
+      "linux": {
+        "MIMode": "gdb"
+      },
+      "osx": {
+        "MIMode": "lldb"
+      }
     },
     {
       "name": "CTest (Release)",
-      "type": "cppvsdbg",
+      "type": "cppdbg",
       "request": "launch",
-      "program": "ctest.exe",
-      "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Release", "--output-on-failure"],
+      "program": "ctest",
+      "args": ["--test-dir", "${workspaceFolder}/build", "--output-on-failure"],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "environment": [],
+      "MIMode": "gdb",
       "console": "integratedTerminal",
-      "preLaunchTask": "cmake: build"
+      "preLaunchTask": "cmake: build",
+      "windows": {
+        "type": "cppvsdbg",
+        "program": "ctest.exe",
+        "args": ["--test-dir", "${workspaceFolder}/build", "-C", "Release", "--output-on-failure"]
+      },
+      "linux": {
+        "MIMode": "gdb"
+      },
+      "osx": {
+        "MIMode": "lldb"
+      }
     }
   ]
 }

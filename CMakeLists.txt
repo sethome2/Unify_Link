@@ -95,6 +95,7 @@ if(UNIFY_LINK_BUILD_PYTHON)
 
     # Building via scikit-build-core for pip
     install(TARGETS unify_link_py DESTINATION unify_link)
+    install(FILES python/unify_link/__init__.py DESTINATION unify_link)
 
     # Development/standalone builds
     set_target_properties(unify_link_py PROPERTIES

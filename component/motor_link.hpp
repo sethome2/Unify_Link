@@ -113,7 +113,10 @@ namespace unify_link
         void build_handle_data_matrix()
         {
             // 注册数据处理函数
-            link_base.register_handle_data(component_id, MOTOR_BASIC_ID, &motor_basic, nullptr, sizeof(motor_basic));
+            link_base.register_handle_data(
+                component_id, MOTOR_BASIC_ID, &motor_basic,
+                [this](const uint8_t *data, uint16_t len) { return this->handle_motor_basic(data, len); },
+                sizeof(motor_basic));
 
             link_base.register_handle_data(
                 component_id, MOTOR_INFO_ID, nullptr, [this](const uint8_t *data, uint16_t len)

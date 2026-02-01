@@ -56,6 +56,7 @@ target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 # Thread support (optional, for platforms that provide a thread library)
 if(UNIFY_LINK_USE_THREADS)
     find_package(Threads QUIET)
+
     if(TARGET Threads::Threads)
         target_link_libraries(${PROJECT_NAME} INTERFACE Threads::Threads)
     else()
@@ -147,16 +148,13 @@ if(UNIFY_LINK_BUILD_TESTS)
 
         add_executable(${test_name} ${test_source})
         target_link_libraries(${test_name} PRIVATE ${PROJECT_NAME})
+
         if(TARGET Threads::Threads)
             target_link_libraries(${test_name} PRIVATE Threads::Threads)
         endif()
 
-        if(test_name STREQUAL "spsc_ringbuffer_test")
-            add_test(NAME ${test_name} COMMAND ${test_name})
-        else()
-            target_link_libraries(${test_name} PRIVATE GTest::gtest_main)
-            gtest_discover_tests(${test_name})
-        endif()
+        target_link_libraries(${test_name} PRIVATE GTest::gtest_main)
+        gtest_discover_tests(${test_name})
     endfunction()
 
     foreach(test_source IN LISTS test_sources)

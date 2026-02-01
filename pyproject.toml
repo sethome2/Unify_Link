@@ -38,3 +38,7 @@ Issues = "https://github.com/yourusername/unify-link/issues"
 [tool.scikit-build]
 cmake.minimum-version = "3.16"
 cmake.build-type = "Release"
+cmake.args = [
+    "-DUNIFY_LINK_BUILD_TESTS=OFF",
+    "-DUNIFY_LINK_BUILD_EXAMPLES=OFF",
+]

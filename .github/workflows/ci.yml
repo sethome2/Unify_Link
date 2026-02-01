@@ -93,7 +93,7 @@ jobs:
   coverage:
     name: Code Coverage
     runs-on: ubuntu-latest
-    if: false # TODO: Enable when ready
+    if: true # TODO: Enable when ready
 
     steps:
       - name: Checkout repository
@@ -136,7 +136,7 @@ jobs:
   static-analysis:
     name: Static Analysis
     runs-on: ubuntu-latest
-    if: false # TODO: Enable when ready
+    if: true
 
     steps:
       - name: Checkout repository
@@ -210,6 +210,7 @@ jobs:
         with:
           name: wheel-${{ matrix.os }}
           path: dist/*.whl
+          retention-days: 7
 
       - name: Upload sdist (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
@@ -217,6 +218,7 @@ jobs:
         with:
           name: sdist
           path: dist/*.tar.gz
+          retention-days: 7
 
   # ==========================================================================
   # Release Build

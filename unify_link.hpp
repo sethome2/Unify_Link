@@ -265,8 +265,8 @@ namespace unify_link
                                        it->second.payload_length);
             }
 
-            // 长度不匹配
-            if (it->second.payload_length != len)
+            // 长度不匹配（0xFFFF 表示接受任意长度）
+            if (it->second.payload_length != 0xFFFF && it->second.payload_length != len)
                 return false;
 
             // 复制数据到目标地址

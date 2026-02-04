@@ -81,6 +81,11 @@ namespace
         return base.build_send_data(component_id, data_id, reinterpret_cast<const uint8_t *>(view.data()), len);
     }
 
+    bool register_any_payload(Unify_link_base &base, uint8_t component_id, uint8_t data_id)
+    {
+        return base.register_handle_data(component_id, data_id, nullptr, handle_data_func_t{}, 0xFFFF);
+    }
+
 } // namespace
 
 PYBIND11_MODULE(unify_link, m)
@@ -114,6 +119,8 @@ PYBIND11_MODULE(unify_link, m)
         .def("parse_data_task", &Unify_link_base::parse_data_task, "Parse received buffer and dispatch frames")
         .def("rev_data_push", &push_recv_data, py::arg("data"),
              "Push raw bytes into the receive buffer. Returns False if the data does not fit.")
+        .def("register_any_payload", &register_any_payload, py::arg("component_id"), py::arg("data_id"),
+             "Register a handler that accepts any payload length for the given component/data ID.")
         .def("build_send_data", &build_send_data_bytes, py::arg("component_id"), py::arg("data_id"), py::arg("payload"),
              "Build a packet into the send buffer from raw payload bytes")
         .def("pop_send_buffer", &pop_send_buffer,
